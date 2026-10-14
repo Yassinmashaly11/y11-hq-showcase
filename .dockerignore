@@ -1,0 +1,7 @@
+# Keep the Docker build small, and never copy secrets into the box.
+.git
+**/node_modules
+**/dist
+**/.env
+**/*.log
+**/*.tsbuildinfo

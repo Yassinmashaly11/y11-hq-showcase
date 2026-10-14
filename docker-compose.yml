@@ -1,0 +1,38 @@
+# Local Docker setup.
+#   Just the database, for `npm run dev`:  docker compose up -d db
+#   The whole app in Docker:               docker compose up --build   (then open http://localhost:8080)
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_DB: y11hq
+    ports:
+      # 5433 so it doesn't clash with a Postgres already on your Mac (5432).
+      # 127.0.0.1 so only your Mac can reach this password-less database, not your Wi-Fi.
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - y11hq-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-d", "y11hq"]
+      interval: 2s
+      retries: 15
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    # Same CEO password, JWT secret and SEED_DEMO_DATA as your normal setup.
+    env_file: server/.env
+    environment:
+      DATABASE_URL: postgres://postgres@db:5432/y11hq
+      PORT: 4000
+      # Local only: lets the login cookie work over plain http://localhost.
+      # Online (Railway) it stays "production", so the cookie is HTTPS-only.
+      NODE_ENV: development
+    ports:
+      - "8080:4000"
+
+volumes:
+  y11hq-data:
